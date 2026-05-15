@@ -1,0 +1,5 @@
+id,name,model_id:id,group_id:id,perm_read,perm_write,perm_create,perm_unlink
+access_edi_inbound_invoice_user,edi.inbound.invoice user,model_edi_inbound_invoice,account.group_account_user,1,1,1,0
+access_edi_inbound_invoice_manager,edi.inbound.invoice manager,model_edi_inbound_invoice,account.group_account_manager,1,1,1,1
+access_edi_invoice_log_user,edi.invoice.log user,model_edi_invoice_log,account.group_account_user,1,0,0,0
+access_edi_invoice_log_manager,edi.invoice.log manager,model_edi_invoice_log,account.group_account_manager,1,1,1,1

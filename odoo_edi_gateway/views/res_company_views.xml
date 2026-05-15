@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_company_form_edi" model="ir.ui.view">
+        <field name="name">res.company.form.edi</field>
+        <field name="model">res.company</field>
+        <field name="inherit_id" ref="base.view_company_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//page[last()]" position="after">
+                <page string="EDI Gateway" name="edi_gateway">
+                    <group string="PDP Configuration">
+                        <field name="edi_pdp_provider"/>
+                        <field name="edi_super_pdp_sandbox"/>
+                        <field name="edi_super_pdp_base_url" attrs="{'invisible': [('edi_pdp_provider', '!=', 'super_pdp')]}"/>
+                        <field name="edi_super_pdp_api_key" password="True" attrs="{'invisible': [('edi_pdp_provider', '!=', 'super_pdp')]}"/>
+                        <field name="edi_webhook_secret" password="True"/>
+                    </group>
+                    <group string="Fallback Polling">
+                        <field name="edi_polling_enabled"/>
+                        <field name="edi_polling_interval" attrs="{'invisible': [('edi_polling_enabled', '=', False)]}"/>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

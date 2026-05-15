@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <menuitem id="menu_edi_gateway_root"
+              name="EDI Gateway"
+              parent="account.menu_finance"
+              sequence="99"/>
+
+    <menuitem id="menu_edi_inbound"
+              name="Inbound Invoices"
+              parent="menu_edi_gateway_root"
+              action="action_edi_inbound_invoice"
+              sequence="10"/>
+
+    <menuitem id="menu_edi_logs"
+              name="Audit Logs"
+              parent="menu_edi_gateway_root"
+              action="action_edi_invoice_log"
+              sequence="20"/>
+</odoo>

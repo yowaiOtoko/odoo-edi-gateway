@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_move_form_edi" model="ir.ui.view">
+        <field name="name">account.move.form.edi</field>
+        <field name="model">account.move</field>
+        <field name="inherit_id" ref="account.view_move_form"/>
+        <field name="arch" type="xml">
+            <!-- Status bar button -->
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_edi_logs"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-exchange"
+                        attrs="{'invisible': [('edi_log_count', '=', 0)]}">
+                    <field name="edi_log_count" widget="statinfo" string="EDI Logs"/>
+                </button>
+            </xpath>
+            <!-- Send EDI button -->
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_send_edi"
+                        string="Send EDI"
+                        type="object"
+                        class="btn-primary"
+                        icon="fa-paper-plane"
+                        attrs="{'invisible': [('state', '!=', 'posted')]}"/>
+            </xpath>
+            <!-- EDI status tab -->
+            <xpath expr="//page[@name='other_tab']" position="after">
+                <page string="EDI" name="edi_tab" attrs="{'invisible': [('edi_state', '=', False)]}">
+                    <group>
+                        <group string="EDI Status">
+                            <field name="edi_state" widget="badge"
+                                   decoration-success="edi_state in ('accepted', 'delivered')"
+                                   decoration-warning="edi_state in ('queued', 'sent')"
+                                   decoration-danger="edi_state in ('rejected', 'error')"/>
+                            <field name="edi_provider"/>
+                            <field name="edi_external_id"/>
+                            <field name="edi_sent_at"/>
+                        </group>
+                        <group string="Error">
+                            <field name="edi_last_error" attrs="{'invisible': [('edi_last_error', '=', False)]}"/>
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+</odoo>

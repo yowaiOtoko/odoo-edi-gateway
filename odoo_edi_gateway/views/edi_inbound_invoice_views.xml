@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_edi_inbound_invoice_list" model="ir.ui.view">
+        <field name="name">edi.inbound.invoice.list</field>
+        <field name="model">edi.inbound.invoice</field>
+        <field name="arch" type="xml">
+            <list string="Inbound Invoices" decoration-danger="state == 'error'" decoration-success="state == 'done'">
+                <field name="external_id"/>
+                <field name="provider"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'done'"
+                       decoration-warning="state in ('received', 'parsing', 'parsed', 'creating')"
+                       decoration-danger="state == 'error'"/>
+                <field name="move_id"/>
+                <field name="company_id" groups="base.group_multi_company"/>
+                <field name="create_date" string="Received At"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_edi_inbound_invoice_form" model="ir.ui.view">
+        <field name="name">edi.inbound.invoice.form</field>
+        <field name="model">edi.inbound.invoice</field>
+        <field name="arch" type="xml">
+            <form string="Inbound EDI Invoice">
+                <header>
+                    <button name="action_process" string="Process" type="object"
+                            class="btn-primary"
+                            attrs="{'invisible': [('state', 'not in', ['received', 'error'])]}"/>
+                    <button name="action_view_invoice" string="View Invoice" type="object"
+                            attrs="{'invisible': [('move_id', '=', False)]}"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="received,parsed,done,error"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group string="Identification">
+                            <field name="external_id"/>
+                            <field name="provider"/>
+                            <field name="company_id" groups="base.group_multi_company"/>
+                            <field name="move_id"/>
+                        </group>
+                        <group string="Status">
+                            <field name="state"/>
+                            <field name="error_message" attrs="{'invisible': [('error_message', '=', False)]}"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Raw XML">
+                            <field name="raw_xml" widget="text" readonly="1"/>
+                        </page>
+                        <page string="Parsed Data">
+                            <field name="parsed_data" widget="text" readonly="1"/>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_edi_inbound_invoice" model="ir.actions.act_window">
+        <field name="name">Inbound EDI Invoices</field>
+        <field name="res_model">edi.inbound.invoice</field>
+        <field name="view_mode">list,form</field>
+    </record>
+</odoo>
