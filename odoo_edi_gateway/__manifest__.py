@@ -10,7 +10,7 @@
         'queue_job',
     ],
     'external_dependencies': {
-        'python': ['facturx', 'requests', 'cryptography'],
+        'python': ['factur-x', 'requests', 'cryptography'],
     },
     'data': [
         'security/ir.model.access.csv',

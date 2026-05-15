@@ -10,13 +10,13 @@
                     <group string="PDP Configuration">
                         <field name="edi_pdp_provider"/>
                         <field name="edi_super_pdp_sandbox"/>
-                        <field name="edi_super_pdp_base_url" attrs="{'invisible': [('edi_pdp_provider', '!=', 'super_pdp')]}"/>
-                        <field name="edi_super_pdp_api_key" password="True" attrs="{'invisible': [('edi_pdp_provider', '!=', 'super_pdp')]}"/>
+                        <field name="edi_super_pdp_base_url" invisible="edi_pdp_provider != 'super_pdp'"/>
+                        <field name="edi_super_pdp_api_key" password="True" invisible="edi_pdp_provider != 'super_pdp'"/>
                         <field name="edi_webhook_secret" password="True"/>
                     </group>
                     <group string="Fallback Polling">
                         <field name="edi_polling_enabled"/>
-                        <field name="edi_polling_interval" attrs="{'invisible': [('edi_polling_enabled', '=', False)]}"/>
+                        <field name="edi_polling_interval" invisible="not edi_polling_enabled"/>
                     </group>
                 </page>
             </xpath>

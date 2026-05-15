@@ -2,25 +2,15 @@
 import logging
 
 from odoo import api, models
-from odoo.addons.queue_job.job import job
 
 from ..services.edi_service import EDIService
 
 _logger = logging.getLogger(__name__)
 
-_RETRY_PATTERN = {
-    1: 60,       # 1 min
-    2: 300,      # 5 min
-    3: 900,      # 15 min
-    4: 3600,     # 1 hour
-    5: 21600,    # 6 hours
-}
-
 
 class AccountMove(models.Model):
     _inherit = 'account.move'
 
-    @job(retry_pattern=_RETRY_PATTERN)
     def _job_send_edi(self):
         """Async job: generate Factur-X and submit to PDP."""
         service = EDIService(self.env)
@@ -51,7 +41,6 @@ class AccountMove(models.Model):
 class EdiInboundInvoice(models.Model):
     _inherit = 'edi.inbound.invoice'
 
-    @job(retry_pattern=_RETRY_PATTERN)
     def _job_process_inbound(self):
         """Async job: parse inbound invoice XML and create draft account.move."""
         service = EDIService(self.env)

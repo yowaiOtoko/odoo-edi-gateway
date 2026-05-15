@@ -26,9 +26,9 @@
                 <header>
                     <button name="action_process" string="Process" type="object"
                             class="btn-primary"
-                            attrs="{'invisible': [('state', 'not in', ['received', 'error'])]}"/>
+                        invisible="state not in ('received', 'error')"/>
                     <button name="action_view_invoice" string="View Invoice" type="object"
-                            attrs="{'invisible': [('move_id', '=', False)]}"/>
+                        invisible="not move_id"/>
                     <field name="state" widget="statusbar"
                            statusbar_visible="received,parsed,done,error"/>
                 </header>
@@ -42,7 +42,7 @@
                         </group>
                         <group string="Status">
                             <field name="state"/>
-                            <field name="error_message" attrs="{'invisible': [('error_message', '=', False)]}"/>
+                            <field name="error_message" invisible="not error_message"/>
                         </group>
                     </group>
                     <notebook>
