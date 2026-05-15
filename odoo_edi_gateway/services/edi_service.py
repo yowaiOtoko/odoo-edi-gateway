@@ -25,6 +25,11 @@ class EDIService:
 
     def send_invoice(self, move):
         """Generate Factur-X, submit to PDP, update state."""
+        from ..adapters import get_adapter
+        adapter = get_adapter(move.company_id)
+        if not adapter:
+            _logger.warning("EDI not configured for company %s, skipping send_invoice", move.company_id.id)
+            return
         generator = FacturXGenerator(move)
         try:
             pdf_bytes = generator.generate()
@@ -41,7 +46,6 @@ class EDIService:
 
         move.edi_invoice_hash = invoice_hash
         metadata = generator.get_metadata()
-        adapter = get_adapter(move.company_id)
         result = adapter.send_invoice(pdf_bytes, invoice_hash, metadata)
 
         if result.success:
@@ -78,9 +82,13 @@ class EDIService:
 
     def poll_invoice_status(self, move):
         """Fallback polling: fetch current status from PDP and sync."""
+        from ..adapters import get_adapter
         if not move.edi_external_id:
             return
         adapter = get_adapter(move.company_id)
+        if not adapter:
+            _logger.warning("EDI not configured for company %s, skipping poll_invoice_status", move.company_id.id)
+            return
         result = adapter.get_status(move.edi_external_id)
         if result.success and result.edi_state and result.edi_state != move.edi_state:
             move._edi_set_state(result.edi_state, provider_response=json.dumps(result.raw_response))

@@ -28,7 +28,11 @@ class EDIWebhookController(http.Controller):
             _logger.warning("Inbound webhook: no matching company found")
             return request.make_response('Unauthorized', status=401)
 
+
         adapter = get_adapter(company)
+        if not adapter:
+            _logger.warning("Inbound webhook: EDI not configured for company %s, skipping", company.id)
+            return request.make_response('OK', status=200)
         if not adapter.validate_webhook(headers, body):
             _logger.warning("Inbound webhook: invalid signature for company %s", company.id)
             return request.make_response('Forbidden', status=403)
@@ -79,7 +83,11 @@ class EDIWebhookController(http.Controller):
         if not company:
             return request.make_response('Unauthorized', status=401)
 
+
         adapter = get_adapter(company)
+        if not adapter:
+            _logger.warning("Lifecycle webhook: EDI not configured for company %s, skipping", company.id)
+            return request.make_response('OK', status=200)
         if not adapter.validate_webhook(headers, body):
             return request.make_response('Forbidden', status=403)
 

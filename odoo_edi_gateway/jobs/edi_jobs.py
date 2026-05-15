@@ -13,6 +13,10 @@ class AccountMove(models.Model):
 
     def _job_send_edi(self):
         """Async job: generate Factur-X and submit to PDP."""
+        from ..adapters import is_edi_configured
+        if not is_edi_configured(self.company_id):
+            _logger.warning("EDI not configured for company %s, skipping _job_send_edi", self.company_id.id)
+            return
         service = EDIService(self.env)
         try:
             service.send_invoice(self)
@@ -23,8 +27,12 @@ class AccountMove(models.Model):
     @api.model
     def _cron_poll_edi_status(self):
         """Cron: poll PDP for status updates on in-flight invoices (optional fallback)."""
+        from ..adapters import is_edi_configured
         companies = self.env['res.company'].search([('edi_polling_enabled', '=', True)])
         for company in companies:
+            if not is_edi_configured(company):
+                _logger.warning("EDI not configured for company %s, skipping poll", company.id)
+                continue
             moves = self.search([
                 ('company_id', '=', company.id),
                 ('edi_state', 'in', ['sent', 'delivered']),
