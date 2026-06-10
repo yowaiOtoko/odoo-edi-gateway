@@ -9,9 +9,19 @@
                 <page string="EDI Gateway" name="edi_gateway">
                     <group string="PDP Configuration">
                         <field name="edi_pdp_provider"/>
-                        <field name="edi_super_pdp_sandbox"/>
-                        <field name="edi_super_pdp_base_url" invisible="edi_pdp_provider != 'super_pdp'"/>
-                        <field name="edi_super_pdp_api_key" password="True" invisible="edi_pdp_provider != 'super_pdp'"/>
+                        <field name="edi_super_pdp_sandbox" invisible="edi_pdp_provider != 'super_pdp'"/>
+                    </group>
+                    <group string="SUPER PDP OAuth2 Credentials" invisible="edi_pdp_provider != 'super_pdp'">
+                        <field name="edi_super_pdp_client_id"/>
+                        <field name="edi_super_pdp_client_secret" password="True"/>
+                        <field name="edi_super_pdp_auth_url"/>
+                        <field name="edi_super_pdp_base_url"/>
+                    </group>
+                    <group string="SUPER PDP Token Cache (readonly)" invisible="edi_pdp_provider != 'super_pdp'">
+                        <field name="edi_super_pdp_access_token" readonly="True"/>
+                        <field name="edi_super_pdp_token_expiry" readonly="True"/>
+                    </group>
+                    <group string="Webhook Security">
                         <field name="edi_webhook_secret" password="True"/>
                     </group>
                     <group string="Fallback Polling">

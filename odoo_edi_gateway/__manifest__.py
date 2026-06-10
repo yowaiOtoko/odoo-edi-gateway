@@ -1,9 +1,9 @@
 {
     'name': 'EDI Gateway',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.0.1',
     'category': 'Accounting/EDI',
     'summary': 'French e-invoicing EDI gateway — send, receive, lifecycle tracking via PDP',
-    'author': 'Zotcar',
+    'author': 'invo facturation',
     'license': 'LGPL-3',
     'depends': [
         'account',

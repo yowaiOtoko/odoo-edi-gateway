@@ -13,9 +13,11 @@ def get_adapter(company) -> PDPAdapter:
     cls = ADAPTER_REGISTRY.get(provider)
     if not cls:
         return None
-    # Check for required config (example: API key for super_pdp)
+    # Check for required config (OAuth2 credentials for super_pdp)
     if provider == 'super_pdp':
-        if not getattr(company, 'edi_super_pdp_api_key', None):
+        client_id = getattr(company, 'edi_super_pdp_client_id', None)
+        client_secret = getattr(company, 'edi_super_pdp_client_secret', None)
+        if not client_id or not client_secret:
             return None
     return cls(company)
 
@@ -25,5 +27,7 @@ def is_edi_configured(company) -> bool:
     if not provider:
         return False
     if provider == 'super_pdp':
-        return bool(getattr(company, 'edi_super_pdp_api_key', None))
+        client_id = getattr(company, 'edi_super_pdp_client_id', None)
+        client_secret = getattr(company, 'edi_super_pdp_client_secret', None)
+        return bool(client_id and client_secret)
     return False

@@ -9,15 +9,22 @@ class ResCompany(models.Model):
         string='PDP Provider',
         default='super_pdp',
     )
-    edi_super_pdp_api_key = fields.Char(string='SUPER PDP API Key')
+    edi_super_pdp_client_id = fields.Char(string='SUPER PDP Client ID')
+    edi_super_pdp_client_secret = fields.Char(string='SUPER PDP Client Secret')
     edi_super_pdp_base_url = fields.Char(
-        string='SUPER PDP Base URL',
-        default='https://api.sandbox.super-pdp.fr/v1',
+        string='SUPER PDP API Base URL',
+        default='https://api.sandbox.super-pdp.tech/v1.beta',
+    )
+    edi_super_pdp_auth_url = fields.Char(
+        string='SUPER PDP Auth URL',
+        default='https://api.sandbox.super-pdp.tech',
     )
     edi_super_pdp_sandbox = fields.Boolean(
         string='Sandbox Mode',
         default=True,
     )
+    edi_super_pdp_access_token = fields.Char(string='SUPER PDP Access Token (cached)', readonly=True)
+    edi_super_pdp_token_expiry = fields.DateTime(string='Token Expiry (UTC)', readonly=True)
     edi_polling_enabled = fields.Boolean(
         string='Enable Fallback Polling',
         default=False,
