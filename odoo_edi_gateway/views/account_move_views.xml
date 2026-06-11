@@ -40,6 +40,24 @@
                         icon="fa-refresh"
                     invisible="not edi_external_id"/>
             </xpath>
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_retry_edi"
+                        string="Retry EDI"
+                        type="object"
+                        class="btn-warning"
+                        icon="fa-repeat"
+                        confirm="Re-queue this invoice for EDI transmission. This will override the current EDI state."
+                    invisible="state != 'posted' or edi_state not in ('error', 'rejected', 'queued')"/>
+            </xpath>
+            <xpath expr="//div[@name='button_box']" position="inside">
+                <button name="action_view_queue_jobs"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-tasks"
+                        invisible="edi_state not in ('queued', 'sent', 'error')">
+                    <span class="o_stat_text">Queue Jobs</span>
+                </button>
+            </xpath>
             <!-- EDI status tab -->
             <xpath expr="//sheet/notebook" position="inside">
                 <page string="EDI" name="edi_tab" invisible="not edi_state">

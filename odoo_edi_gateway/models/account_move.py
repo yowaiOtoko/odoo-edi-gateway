@@ -99,6 +99,28 @@ class AccountMove(models.Model):
                 raise UserError("No EDI external ID found. Send the invoice first.")
             service.poll_invoice_status(move)
 
+    def action_retry_edi(self):
+        """Force re-queue the EDI job regardless of current EDI state."""
+        for move in self:
+            if move.state != 'posted':
+                raise UserError("Invoice must be posted before EDI transmission.")
+            move._edi_set_state('queued')
+            move.with_delay()._job_send_edi()
+
+    def action_view_queue_jobs(self):
+        """Open the queue.job list filtered to this invoice's EDI jobs."""
+        return {
+            'type': 'ir.actions.act_window',
+            'name': 'EDI Queue Jobs',
+            'res_model': 'queue.job',
+            'view_mode': 'list,form',
+            'domain': [
+                ('model_name', '=', 'account.move'),
+                ('record_ids', 'like', str(self.id)),
+                ('method_name', '=', '_job_send_edi'),
+            ],
+        }
+
     def _edi_set_state(self, new_state, payload=None, provider_response=None):
         for move in self:
             old_state = move.edi_state
