@@ -100,12 +100,13 @@ class AccountMove(models.Model):
             service.poll_invoice_status(move)
 
     def action_retry_edi(self):
-        """Force re-queue the EDI job regardless of current EDI state."""
+        """Force EDI submission immediately, bypassing the queue worker."""
+        service = EDIService(self.env)
         for move in self:
             if move.state != 'posted':
                 raise UserError("Invoice must be posted before EDI transmission.")
             move._edi_set_state('queued')
-            move.with_delay()._job_send_edi()
+            service.send_invoice(move)
 
     def action_view_queue_jobs(self):
         """Open the queue.job list filtered to this invoice's EDI jobs."""

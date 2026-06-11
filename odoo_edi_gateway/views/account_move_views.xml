@@ -42,11 +42,11 @@
             </xpath>
             <xpath expr="//div[@name='button_box']" position="inside">
                 <button name="action_retry_edi"
-                        string="Retry EDI"
+                        string="Force Send Now"
                         type="object"
                         class="btn-warning"
-                        icon="fa-repeat"
-                        confirm="Re-queue this invoice for EDI transmission. This will override the current EDI state."
+                        icon="fa-bolt"
+                        confirm="Send this invoice to the PDP immediately, bypassing the queue worker."
                     invisible="state != 'posted' or edi_state not in ('error', 'rejected', 'queued')"/>
             </xpath>
             <xpath expr="//div[@name='button_box']" position="inside">
