@@ -24,7 +24,7 @@ class ResCompany(models.Model):
         default=True,
     )
     edi_super_pdp_access_token = fields.Char(string='SUPER PDP Access Token (cached)', readonly=True)
-    edi_super_pdp_token_expiry = fields.DateTime(string='Token Expiry (UTC)', readonly=True)
+    edi_super_pdp_token_expiry = fields.Datetime(string='Token Expiry (UTC)', readonly=True)
     edi_polling_enabled = fields.Boolean(
         string='Enable Fallback Polling',
         default=False,

@@ -1,6 +1,6 @@
 {
     'name': 'EDI Gateway',
-    'version': '19.0.1.0.1',
+    'version': '19.0.1.0.2',
     'category': 'Accounting/EDI',
     'summary': 'French e-invoicing EDI gateway — send, receive, lifecycle tracking via PDP',
     'author': 'invo facturation',
