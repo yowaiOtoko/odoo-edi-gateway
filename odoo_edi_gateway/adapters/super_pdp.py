@@ -26,21 +26,31 @@ _TIMEOUT = 30  # seconds
 class SuperPDPAdapter(PDPAdapter):
     """SUPER PDP REST API adapter (sandbox + production) with OAuth2 client credentials flow."""
 
+    def _normalize_super_pdp_url(self, url: str) -> str:
+        # SUPER PDP host changed from super-pdp.tech to superpdp.tech.
+        return url.replace('super-pdp.tech', 'superpdp.tech').rstrip('/')
+
     def _base_url(self) -> str:
-        return (self.company.edi_super_pdp_base_url or 'https://api.sandbox.super-pdp.tech/v1.beta').rstrip('/')
+        raw_url = self.company.edi_super_pdp_base_url or 'https://api.sandbox.superpdp.tech/v1.beta'
+        return self._normalize_super_pdp_url(raw_url)
 
     def _auth_url(self) -> str:
-        return (self.company.edi_super_pdp_auth_url or 'https://api.sandbox.super-pdp.tech').rstrip('/')
+        raw_url = self.company.edi_super_pdp_auth_url or 'https://api.sandbox.superpdp.tech'
+        return self._normalize_super_pdp_url(raw_url)
+
+    def _basic_auth_header(self, client_id: str, client_secret: str) -> str:
+        token = base64.b64encode(f'{client_id}:{client_secret}'.encode('utf-8')).decode('ascii')
+        return f'Basic {token}'
 
     def _get_access_token(self) -> str | None:
         """Obtain or refresh OAuth2 access token via client credentials flow."""
         client_id = self.company.edi_super_pdp_client_id
         client_secret = self.company.edi_super_pdp_client_secret
-        
+
         if not client_id or not client_secret:
             _logger.error("Super PDP: client_id or client_secret not configured")
             return None
-        
+
         # Check if cached token is still valid
         cached_token = self.company.edi_super_pdp_access_token
         token_expiry = self.company.edi_super_pdp_token_expiry
@@ -48,53 +58,96 @@ class SuperPDPAdapter(PDPAdapter):
             if datetime.utcnow() < token_expiry:
                 _logger.debug("Using cached SUPER PDP access token")
                 return cached_token
-        
+
         token_url = f'{self._auth_url()}/oauth2/token'
-        payload = {
-            'grant_type': 'client_credentials',
-            'client_id': client_id,
-            'client_secret': client_secret,
-        }
-        
-        try:
-            resp = requests.post(token_url, data=payload, timeout=_TIMEOUT)
-            resp.raise_for_status()
-            data = resp.json()
-            access_token = data.get('access_token')
-            expires_in = data.get('expires_in', 3600)  # default 1 hour
-            
-            if access_token:
-                # Cache token with expiry (subtract 60s buffer for safety)
-                expiry = datetime.utcnow() + timedelta(seconds=expires_in - 60)
-                self.company.edi_super_pdp_access_token = access_token
-                self.company.edi_super_pdp_token_expiry = expiry
-                _logger.debug("Obtained new SUPER PDP access token, expires at %s", expiry)
-                return access_token
-            else:
+        request_variants = [
+            {
+                'label': 'authorization_header',
+                'data': {'grant_type': 'client_credentials'},
+                'headers': {
+                    'Authorization': self._basic_auth_header(client_id, client_secret),
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Accept': 'application/json',
+                },
+            },
+            {
+                'label': 'body_credentials_fallback',
+                'data': {
+                    'grant_type': 'client_credentials',
+                    'client_id': client_id,
+                    'client_secret': client_secret,
+                },
+                'headers': {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'Accept': 'application/json',
+                },
+            },
+        ]
+
+        last_http_error = None
+        for index, variant in enumerate(request_variants):
+            try:
+                resp = requests.post(
+                    token_url,
+                    data=variant['data'],
+                    headers=variant['headers'],
+                    timeout=_TIMEOUT,
+                )
+                resp.raise_for_status()
+                data = resp.json()
+                access_token = data.get('access_token')
+                expires_in = int(data.get('expires_in', 3600))  # default 1 hour
+
+                if access_token:
+                    # Cache token with expiry (subtract 60s buffer for safety)
+                    ttl_seconds = max(expires_in - 60, 0)
+                    expiry = datetime.utcnow() + timedelta(seconds=ttl_seconds)
+                    self.company.edi_super_pdp_access_token = access_token
+                    self.company.edi_super_pdp_token_expiry = expiry
+                    _logger.debug(
+                        "Obtained new SUPER PDP access token via %s, expires at %s",
+                        variant['label'],
+                        expiry,
+                    )
+                    return access_token
+
                 _logger.error("SUPER PDP oauth2/token response missing access_token: %s", data)
                 return None
-        except requests.HTTPError as exc:
-            body = {}
-            try:
-                body = exc.response.json()
-            except Exception:
-                pass
-            _logger.error("SUPER PDP oauth2/token HTTP error: %s — %s", exc.response.status_code, body)
-            capture_exception(exc, env=self.company.env, context={
-                'provider': 'super_pdp',
-                'operation': 'oauth2_token',
-                'company_id': self.company.id,
-                'status_code': getattr(exc.response, 'status_code', None),
-            })
+            except requests.HTTPError as exc:
+                last_http_error = exc
+                is_last_variant = index == len(request_variants) - 1
+                if not is_last_variant:
+                    _logger.warning(
+                        "SUPER PDP oauth2/token variant %s failed with HTTP %s, retrying",
+                        variant['label'],
+                        getattr(exc.response, 'status_code', None),
+                    )
+                    continue
+                body = {}
+                try:
+                    body = exc.response.json()
+                except Exception:
+                    pass
+                _logger.error("SUPER PDP oauth2/token HTTP error: %s — %s", exc.response.status_code, body)
+                capture_exception(exc, env=self.company.env, context={
+                    'provider': 'super_pdp',
+                    'operation': 'oauth2_token',
+                    'company_id': self.company.id,
+                    'status_code': getattr(exc.response, 'status_code', None),
+                })
+                return None
+            except requests.RequestException as exc:
+                _logger.error("SUPER PDP oauth2/token request error: %s", exc)
+                capture_exception(exc, env=self.company.env, context={
+                    'provider': 'super_pdp',
+                    'operation': 'oauth2_token',
+                    'company_id': self.company.id,
+                })
+                return None
+
+        if last_http_error:
             return None
-        except requests.RequestException as exc:
-            _logger.error("SUPER PDP oauth2/token request error: %s", exc)
-            capture_exception(exc, env=self.company.env, context={
-                'provider': 'super_pdp',
-                'operation': 'oauth2_token',
-                'company_id': self.company.id,
-            })
-            return None
+        return None
 
     def _headers(self) -> dict:
         access_token = self._get_access_token()

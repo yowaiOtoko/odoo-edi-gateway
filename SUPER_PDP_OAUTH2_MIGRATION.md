@@ -14,8 +14,8 @@ The previous implementation used a static API key (`edi_super_pdp_api_key`) dire
 **Added:**
 - `edi_super_pdp_client_id` — OAuth2 client ID
 - `edi_super_pdp_client_secret` — OAuth2 client secret
-- `edi_super_pdp_auth_url` — OAuth2 token endpoint base URL (default: `https://api.sandbox.super-pdp.tech`)
-- `edi_super_pdp_base_url` — API base URL (updated default to `https://api.sandbox.super-pdp.tech/v1.beta`)
+- `edi_super_pdp_auth_url` — OAuth2 token endpoint base URL (default: `https://api.sandbox.superpdp.tech`)
+- `edi_super_pdp_base_url` — API base URL (updated default to `https://api.sandbox.superpdp.tech/v1.beta`)
 - `edi_super_pdp_access_token` — cached Bearer token (readonly)
 - `edi_super_pdp_token_expiry` — token expiry datetime (readonly)
 
@@ -75,8 +75,8 @@ In Odoo:
 5. Under **SUPER PDP OAuth2 Credentials**, enter:
    - **Client ID** — from Super PDP account
    - **Client Secret** — from Super PDP account
-   - **Auth URL** — typically `https://api.sandbox.super-pdp.tech` (sandbox) or `https://api.super-pdp.tech` (production)
-   - **API Base URL** — typically `https://api.sandbox.super-pdp.tech/v1.beta` (sandbox) or `https://api.super-pdp.tech/v1.beta` (production)
+   - **Auth URL** — typically `https://api.sandbox.superpdp.tech` (sandbox) or `https://api.superpdp.tech` (production)
+   - **API Base URL** — typically `https://api.sandbox.superpdp.tech/v1.beta` (sandbox) or `https://api.superpdp.tech/v1.beta` (production)
 
 Token caching is automatic—no manual intervention needed.
 

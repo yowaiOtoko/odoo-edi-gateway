@@ -16,11 +16,11 @@ class ResCompany(models.Model):
     edi_super_pdp_client_secret = fields.Char(string='SUPER PDP Client Secret')
     edi_super_pdp_base_url = fields.Char(
         string='SUPER PDP API Base URL',
-        default='https://api.sandbox.super-pdp.tech/v1.beta',
+        default='https://api.sandbox.superpdp.tech/v1.beta',
     )
     edi_super_pdp_auth_url = fields.Char(
         string='SUPER PDP Auth URL',
-        default='https://api.sandbox.super-pdp.tech',
+        default='https://api.sandbox.superpdp.tech',
     )
     edi_super_pdp_sandbox = fields.Boolean(
         string='Sandbox Mode',
