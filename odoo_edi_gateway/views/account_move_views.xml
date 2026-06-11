@@ -28,15 +28,15 @@
                 <button name="action_send_sandbox_test_edi"
                         string="Send Sandbox Test"
                         type="object"
-                        class="btn-secondary"
+                        class="btn-primary"
                         icon="fa-flask"
-                    invisible="state != 'posted' or company_id.edi_pdp_provider != 'super_pdp' or not company_id.edi_super_pdp_sandbox"/>
+                    invisible="state != 'posted' or edi_company_provider != 'super_pdp' or not edi_company_sandbox"/>
             </xpath>
             <xpath expr="//div[@name='button_box']" position="inside">
                 <button name="action_poll_edi_status_now"
                         string="Poll EDI Now"
                         type="object"
-                        class="btn-secondary"
+                        class="btn-primary"
                         icon="fa-refresh"
                     invisible="not edi_external_id"/>
             </xpath>

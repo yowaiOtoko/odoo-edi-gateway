@@ -19,6 +19,17 @@ EDI_STATES = [
 class AccountMove(models.Model):
     _inherit = 'account.move'
 
+    edi_company_provider = fields.Selection(
+        related='company_id.edi_pdp_provider',
+        string='EDI Company Provider',
+        readonly=True,
+    )
+    edi_company_sandbox = fields.Boolean(
+        related='company_id.edi_super_pdp_sandbox',
+        string='EDI Company Sandbox',
+        readonly=True,
+    )
+
     edi_state = fields.Selection(
         selection=EDI_STATES,
         string='EDI State',
