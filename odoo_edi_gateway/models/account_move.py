@@ -116,7 +116,7 @@ class AccountMove(models.Model):
             'view_mode': 'list,form',
             'domain': [
                 ('model_name', '=', 'account.move'),
-                ('record_ids', 'like', str(self.id)),
+                ('res_id', '=', self.id),
                 ('method_name', '=', '_job_send_edi'),
             ],
         }
