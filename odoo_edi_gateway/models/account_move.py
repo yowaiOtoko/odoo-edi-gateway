@@ -115,9 +115,8 @@ class AccountMove(models.Model):
             'res_model': 'queue.job',
             'view_mode': 'list,form',
             'domain': [
+                ('channel_method_name', 'like', '_job_send_edi'),
                 ('model_name', '=', 'account.move'),
-                ('res_id', '=', self.id),
-                ('method_name', '=', '_job_send_edi'),
             ],
         }
 
