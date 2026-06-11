@@ -27,6 +27,11 @@
                     <group string="Fallback Polling">
                         <field name="edi_polling_enabled"/>
                         <field name="edi_polling_interval" invisible="not edi_polling_enabled"/>
+                        <button name="action_manual_poll_edi_status"
+                                string="Poll In-Flight Invoices Now"
+                                type="object"
+                                class="btn-secondary"
+                            invisible="edi_pdp_provider != 'super_pdp'"/>
                     </group>
                 </page>
             </xpath>

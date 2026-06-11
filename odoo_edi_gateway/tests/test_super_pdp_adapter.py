@@ -108,6 +108,21 @@ class TestSuperPDPAdapter(TransactionCase):
         self.assertTrue(result.success)
         self.assertEqual(result.edi_state, 'accepted')
 
+    def test_generate_test_invoice_success(self):
+        company = self._make_company()
+        adapter = SuperPDPAdapter(company)
+        mock_token_resp = MagicMock()
+        mock_token_resp.json.return_value = {'access_token': 'test-token', 'expires_in': 3600}
+        mock_token_resp.raise_for_status.return_value = None
+        mock_test_resp = MagicMock()
+        mock_test_resp.json.return_value = {'invoice_id': 'TEST-EXT-1', 'status': 'SUBMITTED'}
+        mock_test_resp.raise_for_status.return_value = None
+        with patch('requests.post', return_value=mock_token_resp):
+            with patch('requests.get', return_value=mock_test_resp):
+                result = adapter.generate_test_invoice()
+        self.assertTrue(result.success)
+        self.assertEqual(result.external_id, 'TEST-EXT-1')
+
     def test_validate_webhook_valid(self):
         company = self._make_company()
         adapter = SuperPDPAdapter(company)

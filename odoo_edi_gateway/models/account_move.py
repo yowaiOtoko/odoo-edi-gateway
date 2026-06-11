@@ -1,6 +1,8 @@
 from odoo import api, fields, models
 from odoo.exceptions import UserError
 
+from ..services.edi_service import EDIService
+
 
 EDI_STATES = [
     ('draft', 'Draft'),
@@ -69,6 +71,22 @@ class AccountMove(models.Model):
                 raise UserError(f"Cannot send invoice in EDI state '{move.edi_state}'.")
             move._edi_set_state('queued')
             move.with_delay()._job_send_edi()
+
+    def action_send_sandbox_test_edi(self):
+        """Manual trigger to generate/send a fake test invoice via SUPER PDP sandbox."""
+        service = EDIService(self.env)
+        for move in self:
+            if move.state != 'posted':
+                raise UserError("Invoice must be posted before sandbox test transmission.")
+            service.send_sandbox_test_invoice(move)
+
+    def action_poll_edi_status_now(self):
+        """Manual trigger: poll provider status for this invoice now."""
+        service = EDIService(self.env)
+        for move in self:
+            if not move.edi_external_id:
+                raise UserError("No EDI external ID found. Send the invoice first.")
+            service.poll_invoice_status(move)
 
     def _edi_set_state(self, new_state, payload=None, provider_response=None):
         for move in self:

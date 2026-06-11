@@ -7,6 +7,7 @@ from odoo.exceptions import UserError
 from ..adapters import get_adapter
 from .facturx_generator import FacturXGenerator
 from .facturx_parser import FacturXParser
+from .sentry import capture_exception
 
 _logger = logging.getLogger(__name__)
 
@@ -36,6 +37,11 @@ class EDIService:
         except Exception as exc:
             _logger.error("Factur-X generation failed for move %s: %s", move.id, exc)
             move._edi_set_state('error', provider_response=str(exc))
+            capture_exception(exc, env=self.env, context={
+                'operation': 'facturx_generate',
+                'move_id': move.id,
+                'company_id': move.company_id.id,
+            })
             raise
 
         invoice_hash = generator.compute_hash(pdf_bytes)
@@ -94,6 +100,36 @@ class EDIService:
             move._edi_set_state(result.edi_state, provider_response=json.dumps(result.raw_response))
         elif not result.success:
             _logger.error("Polling failed for move %s: %s", move.id, result.error)
+            move.edi_last_error = result.error
+            move._edi_set_state('error', provider_response=json.dumps(result.raw_response or {}))
+            raise UserError(f"EDI polling failed: {result.error}")
+
+    def send_sandbox_test_invoice(self, move):
+        """Manual trigger: ask SUPER PDP sandbox to generate a fake test invoice."""
+        adapter = get_adapter(move.company_id)
+        if not adapter:
+            raise UserError("EDI is not configured for this company.")
+        if move.company_id.edi_pdp_provider != 'super_pdp':
+            raise UserError("Sandbox test generation is currently available only for SUPER PDP.")
+        if not move.company_id.edi_super_pdp_sandbox:
+            raise UserError("Sandbox mode must be enabled to generate a fake test invoice.")
+
+        result = adapter.generate_test_invoice()
+        if result.success:
+            move.edi_external_id = result.external_id or move.edi_external_id
+            move.edi_provider = move.company_id.edi_pdp_provider
+            move.edi_sent_at = fields.Datetime.now()
+            move.edi_last_error = False
+            move._edi_set_state(
+                'sent',
+                payload=json.dumps({'manual_test': True, 'source': 'super_pdp_generate_test_invoice'}),
+                provider_response=json.dumps(result.raw_response or {}),
+            )
+            return
+
+        move.edi_last_error = result.error
+        move._edi_set_state('error', provider_response=json.dumps(result.raw_response or {}))
+        raise UserError(f"Sandbox test invoice failed: {result.error}")
 
     # -------------------------------------------------------------------------
     # Inbound
@@ -109,6 +145,11 @@ class EDIService:
             inbound.state = 'error'
             inbound.error_message = str(exc)
             _logger.error("Inbound parse error for %s: %s", inbound.external_id, exc)
+            capture_exception(exc, env=self.env, context={
+                'operation': 'process_inbound_parse',
+                'inbound_id': inbound.id,
+                'external_id': inbound.external_id,
+            })
             return
 
         if not data:
@@ -127,6 +168,11 @@ class EDIService:
             inbound.state = 'error'
             inbound.error_message = str(exc)
             _logger.error("Inbound invoice creation error for %s: %s", inbound.external_id, exc)
+            capture_exception(exc, env=self.env, context={
+                'operation': 'process_inbound_create_move',
+                'inbound_id': inbound.id,
+                'external_id': inbound.external_id,
+            })
 
     def _create_draft_invoice(self, inbound, data: dict):
         supplier_name = data.get('supplier', {}).get('name', '')

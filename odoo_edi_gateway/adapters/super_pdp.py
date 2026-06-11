@@ -7,6 +7,7 @@ from datetime import datetime, timedelta
 import requests
 
 from .base import PDPAdapter, SendResult, StatusResult
+from ..services.sentry import capture_exception
 
 _logger = logging.getLogger(__name__)
 
@@ -79,9 +80,20 @@ class SuperPDPAdapter(PDPAdapter):
             except Exception:
                 pass
             _logger.error("SUPER PDP oauth2/token HTTP error: %s — %s", exc.response.status_code, body)
+            capture_exception(exc, env=self.company.env, context={
+                'provider': 'super_pdp',
+                'operation': 'oauth2_token',
+                'company_id': self.company.id,
+                'status_code': getattr(exc.response, 'status_code', None),
+            })
             return None
         except requests.RequestException as exc:
             _logger.error("SUPER PDP oauth2/token request error: %s", exc)
+            capture_exception(exc, env=self.company.env, context={
+                'provider': 'super_pdp',
+                'operation': 'oauth2_token',
+                'company_id': self.company.id,
+            })
             return None
 
     def _headers(self) -> dict:
@@ -130,9 +142,64 @@ class SuperPDPAdapter(PDPAdapter):
                 pass
             error_msg = body.get('message') or str(exc)
             _logger.error("SUPER PDP send_invoice HTTP error: %s — %s", exc.response.status_code, error_msg)
+            capture_exception(exc, env=self.company.env, context={
+                'provider': 'super_pdp',
+                'operation': 'send_invoice',
+                'company_id': self.company.id,
+                'status_code': getattr(exc.response, 'status_code', None),
+                'invoice_hash': invoice_hash,
+            })
             return SendResult(success=False, error=error_msg, raw_response=body)
         except requests.RequestException as exc:
             _logger.error("SUPER PDP send_invoice request error: %s", exc)
+            capture_exception(exc, env=self.company.env, context={
+                'provider': 'super_pdp',
+                'operation': 'send_invoice',
+                'company_id': self.company.id,
+                'invoice_hash': invoice_hash,
+            })
+            return SendResult(success=False, error=str(exc))
+
+    def generate_test_invoice(self) -> SendResult:
+        """Create a sandbox test invoice in SUPER PDP for manual validation."""
+        url = f'{self._base_url()}/invoices/generate_test_invoice'
+        headers = self._headers()
+        if not headers:
+            return SendResult(
+                success=False,
+                error='Unable to obtain SUPER PDP access token (check client_id/client_secret)',
+            )
+
+        try:
+            resp = requests.get(url, headers=headers, timeout=_TIMEOUT)
+            resp.raise_for_status()
+            data = resp.json()
+            external_id = data.get('invoice_id') or data.get('id')
+            if not external_id and isinstance(data.get('invoice'), dict):
+                external_id = data['invoice'].get('id')
+            return SendResult(success=True, external_id=external_id, raw_response=data)
+        except requests.HTTPError as exc:
+            body = {}
+            try:
+                body = exc.response.json()
+            except Exception:
+                pass
+            error_msg = body.get('message') or str(exc)
+            _logger.error("SUPER PDP generate_test_invoice HTTP error: %s — %s", exc.response.status_code, error_msg)
+            capture_exception(exc, env=self.company.env, context={
+                'provider': 'super_pdp',
+                'operation': 'generate_test_invoice',
+                'company_id': self.company.id,
+                'status_code': getattr(exc.response, 'status_code', None),
+            })
+            return SendResult(success=False, error=error_msg, raw_response=body)
+        except requests.RequestException as exc:
+            _logger.error("SUPER PDP generate_test_invoice request error: %s", exc)
+            capture_exception(exc, env=self.company.env, context={
+                'provider': 'super_pdp',
+                'operation': 'generate_test_invoice',
+                'company_id': self.company.id,
+            })
             return SendResult(success=False, error=str(exc))
 
     def get_status(self, external_id: str) -> StatusResult:
@@ -161,9 +228,22 @@ class SuperPDPAdapter(PDPAdapter):
                 pass
             error_msg = body.get('message') or str(exc)
             _logger.error("SUPER PDP get_status HTTP error: %s — %s", exc.response.status_code, error_msg)
+            capture_exception(exc, env=self.company.env, context={
+                'provider': 'super_pdp',
+                'operation': 'get_status',
+                'company_id': self.company.id,
+                'external_id': external_id,
+                'status_code': getattr(exc.response, 'status_code', None),
+            })
             return StatusResult(success=False, error=error_msg, raw_response=body)
         except requests.RequestException as exc:
             _logger.error("SUPER PDP get_status request error: %s", exc)
+            capture_exception(exc, env=self.company.env, context={
+                'provider': 'super_pdp',
+                'operation': 'get_status',
+                'company_id': self.company.id,
+                'external_id': external_id,
+            })
             return StatusResult(success=False, error=str(exc))
 
     def validate_webhook(self, headers: dict, body: bytes) -> bool:

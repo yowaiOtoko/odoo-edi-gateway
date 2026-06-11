@@ -4,6 +4,7 @@ import logging
 from odoo import api, models
 
 from ..services.edi_service import EDIService
+from ..services.sentry import capture_exception
 
 _logger = logging.getLogger(__name__)
 
@@ -22,6 +23,11 @@ class AccountMove(models.Model):
             service.send_invoice(self)
         except Exception as exc:
             _logger.error("EDI send job failed for move %s: %s", self.id, exc)
+            capture_exception(exc, env=self.env, context={
+                'operation': 'job_send_edi',
+                'move_id': self.id,
+                'company_id': self.company_id.id,
+            })
             raise
 
     @api.model
@@ -44,6 +50,11 @@ class AccountMove(models.Model):
                     service.poll_invoice_status(move)
                 except Exception as exc:
                     _logger.error("Polling error for move %s: %s", move.id, exc)
+                    capture_exception(exc, env=self.env, context={
+                        'operation': 'cron_poll_edi_status',
+                        'move_id': move.id,
+                        'company_id': company.id,
+                    })
 
 
 class EdiInboundInvoice(models.Model):
@@ -56,4 +67,9 @@ class EdiInboundInvoice(models.Model):
             service.process_inbound(self)
         except Exception as exc:
             _logger.error("Inbound EDI job failed for %s: %s", self.external_id, exc)
+            capture_exception(exc, env=self.env, context={
+                'operation': 'job_process_inbound',
+                'inbound_id': self.id,
+                'external_id': self.external_id,
+            })
             raise
