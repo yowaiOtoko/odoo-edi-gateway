@@ -1,3 +1,4 @@
+import base64
 import json
 import logging
 
@@ -44,6 +45,7 @@ class EDIService:
             })
             raise
 
+        self._attach_facturx_pdf(move, pdf_bytes)
         invoice_hash = generator.compute_hash(pdf_bytes)
 
         if move.edi_invoice_hash and move.edi_invoice_hash == invoice_hash and move.edi_external_id:
@@ -64,6 +66,23 @@ class EDIService:
             move.edi_last_error = result.error
             move._edi_set_state('error', provider_response=json.dumps(result.raw_response))
             raise UserError(f"EDI transmission failed: {result.error}")
+
+    def _attach_facturx_pdf(self, move, pdf_bytes: bytes) -> None:
+        """Attach the Factur-X PDF to the invoice if not already present."""
+        existing = move.env['ir.attachment'].search([
+            ('res_model', '=', 'account.move'),
+            ('res_id', '=', move.id),
+            ('name', '=', f'{move.name}_facturx.pdf'),
+        ], limit=1)
+        if not existing:
+            move.env['ir.attachment'].create({
+                'name': f'{move.name}_facturx.pdf',
+                'datas': base64.b64encode(pdf_bytes).decode(),
+                'res_model': 'account.move',
+                'res_id': move.id,
+                'mimetype': 'application/pdf',
+                'description': 'Factur-X EDI PDF',
+            })
 
     def handle_lifecycle_webhook(self, company, payload: dict):
         """Process an inbound lifecycle update webhook from PDP."""

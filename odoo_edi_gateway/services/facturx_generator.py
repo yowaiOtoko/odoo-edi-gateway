@@ -29,9 +29,7 @@ class FacturXGenerator:
         output = io.BytesIO()
         generate_from_file(
             io.BytesIO(pdf_bytes),
-            'MINIMUM',
-            check_xsd=False,
-            facturx_xml=xml_bytes,
+        io.BytesIO(xml_bytes),
             output_pdf_file=output,
         )
         return output.getvalue()
@@ -52,9 +50,9 @@ class FacturXGenerator:
         }
 
     def _get_invoice_pdf(self) -> bytes:
-        report = self.move.env.ref('account.action_account_original_vendor_bill')
+        report_id = self.move._get_invoice_pdf_report_id()
         pdf_content, _ = self.move.env['ir.actions.report']._render_qweb_pdf(
-            'account.action_account_original_vendor_bill',
+            report_id,
             res_ids=self.move.ids,
         )
         return pdf_content
