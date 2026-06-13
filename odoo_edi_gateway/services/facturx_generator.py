@@ -93,9 +93,7 @@ class FacturXGenerator:
     </ram:IssueDateTime>
   </rsm:ExchangedDocument>
   <rsm:SupplyChainTradeTransaction>
-    <ram:IncludedSupplyChainTradeLineItem>
 {lines_xml}
-    </ram:IncludedSupplyChainTradeLineItem>
     <ram:ApplicableHeaderTradeAgreement>
       <ram:SellerTradeParty>
         <ram:Name>{move.company_id.name}</ram:Name>
@@ -124,7 +122,8 @@ class FacturXGenerator:
         return xml.encode('utf-8')
 
     def _line_xml(self, line, index: int) -> str:
-        return f"""      <ram:AssociatedDocumentLineDocument>
+        return f"""    <ram:IncludedSupplyChainTradeLineItem>
+      <ram:AssociatedDocumentLineDocument>
         <ram:LineID>{index}</ram:LineID>
       </ram:AssociatedDocumentLineDocument>
       <ram:SpecifiedTradeProduct>
@@ -142,4 +141,6 @@ class FacturXGenerator:
         <ram:SpecifiedTradeSettlementLineMonetarySummation>
           <ram:LineTotalAmount>{line.price_subtotal:.2f}</ram:LineTotalAmount>
         </ram:SpecifiedTradeSettlementLineMonetarySummation>
-      </ram:SpecifiedLineTradeSettlement>"""
+      </ram:SpecifiedLineTradeSettlement>
+    </ram:IncludedSupplyChainTradeLineItem>"""
+
