@@ -50,20 +50,20 @@ class FacturXGenerator:
         }
 
     def _get_invoice_pdf(self) -> bytes:
-      report_name = 'account.report_invoice'
-      report = self.move.env['ir.actions.report']._get_report_from_name(report_name)
-      if not report or not report.exists():
-        raise ValueError(f'Report "{report_name}" not found')
+        report_name = 'account.report_invoice'
+        report = self.move.env['ir.actions.report']._get_report_from_name(report_name)
+        if not report or not report.exists():
+            raise ValueError(f'Report "{report_name}" not found')
 
-      if report.model == 'account.move' and report_name == 'account.report_invoice':
-        paid_report = self.move.env['ir.actions.report']._get_report_from_name('account.report_invoice_with_payments')
-        if paid_report and paid_report.exists():
-          report_name = 'account.report_invoice_with_payments'
+        if report.model == 'account.move' and report_name == 'account.report_invoice':
+            paid_report = self.move.env['ir.actions.report']._get_report_from_name('account.report_invoice_with_payments')
+            if paid_report and paid_report.exists():
+                report_name = 'account.report_invoice_with_payments'
 
-      pdf_content, _ = self.move.env['ir.actions.report']._render_qweb_pdf(
-        report_name,
-        res_ids=self.move.ids,
-      )
+        pdf_content, _ = self.move.env['ir.actions.report']._render_qweb_pdf(
+            report_name,
+            res_ids=self.move.ids,
+        )
         return pdf_content
 
     def _build_xml(self) -> bytes:
