@@ -6,11 +6,11 @@ from tempfile import NamedTemporaryFile
 _logger = logging.getLogger(__name__)
 
 try:
-  from facturx import generate_from_binary, generate_from_file
+    from facturx import generate_from_binary, generate_from_file
     _FACTURX_AVAILABLE = True
 except ImportError:
-  generate_from_binary = None
-  generate_from_file = None
+    generate_from_binary = None
+    generate_from_file = None
     _FACTURX_AVAILABLE = False
     _logger.warning("facturx library not installed — Factur-X generation unavailable")
 
