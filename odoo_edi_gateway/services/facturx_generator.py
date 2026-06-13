@@ -50,11 +50,11 @@ class FacturXGenerator:
         }
 
     def _get_invoice_pdf(self) -> bytes:
-      report_name = 'account.account_invoices'
-      report = self.move.env['ir.actions.report']._get_report_from_name(report_name)
-      if not report or not report.exists():
-        raise ValueError(f'Report "{report_name}" not found')
-      pdf_content, _ = report._render_qweb_pdf(self.move.ids)
+        report_name = 'account.account_invoices'
+        report = self.move.env['ir.actions.report']._get_report_from_name(report_name)
+        if not report or not report.exists():
+            raise ValueError(f'Report "{report_name}" not found')
+        pdf_content, _ = report._render_qweb_pdf(self.move.ids)
         return pdf_content
 
     def _build_xml(self) -> bytes:
