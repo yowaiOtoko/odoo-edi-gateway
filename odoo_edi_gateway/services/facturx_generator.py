@@ -150,7 +150,7 @@ class FacturXGenerator:
         </ram:NetPriceProductTradePrice>
       </ram:SpecifiedLineTradeAgreement>
       <ram:SpecifiedLineTradeDelivery>
-        <ram:RequestedQuantity unitCode="{line.product_uom_id.name if line.product_uom_id else 'C62'}">{line.quantity:.4f}</ram:RequestedQuantity>
+        <ram:BilledQuantity unitCode="{line.product_uom_id.name if line.product_uom_id else 'C62'}">{line.quantity:.4f}</ram:BilledQuantity>
       </ram:SpecifiedLineTradeDelivery>
       <ram:SpecifiedLineTradeSettlement>
         <ram:SpecifiedTradeSettlementLineMonetarySummation>
