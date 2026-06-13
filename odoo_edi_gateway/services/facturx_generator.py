@@ -1,14 +1,16 @@
 import hashlib
-import io
 import logging
 from datetime import date
+from tempfile import NamedTemporaryFile
 
 _logger = logging.getLogger(__name__)
 
 try:
-    from facturx import generate_from_file
+  from facturx import generate_from_binary, generate_from_file
     _FACTURX_AVAILABLE = True
 except ImportError:
+  generate_from_binary = None
+  generate_from_file = None
     _FACTURX_AVAILABLE = False
     _logger.warning("facturx library not installed — Factur-X generation unavailable")
 
@@ -26,13 +28,17 @@ class FacturXGenerator:
         if not _FACTURX_AVAILABLE:
             _logger.error("Cannot generate Factur-X: facturx library missing")
             return pdf_bytes
-        output = io.BytesIO()
-        generate_from_file(
-            io.BytesIO(pdf_bytes),
-            io.BytesIO(xml_bytes),
-            output_pdf_file=output,
-        )
-        return output.getvalue()
+        if generate_from_binary:
+          return generate_from_binary(pdf_bytes, xml_bytes)
+
+        # Compatibility path for older/newer API variants that only expose file-based generation.
+        with NamedTemporaryFile(prefix='facturx-in-', suffix='.pdf') as src_pdf:
+          src_pdf.write(pdf_bytes)
+          src_pdf.flush()
+          with NamedTemporaryFile(prefix='facturx-out-', suffix='.pdf') as out_pdf:
+            generate_from_file(src_pdf.name, xml_bytes, output_pdf_file=out_pdf.name)
+            out_pdf.seek(0)
+            return out_pdf.read()
 
     def compute_hash(self, pdf_bytes: bytes) -> str:
         return hashlib.sha256(pdf_bytes).hexdigest()
