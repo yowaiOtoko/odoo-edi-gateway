@@ -153,9 +153,31 @@ class FacturXGenerator:
         <ram:BilledQuantity unitCode="{line.product_uom_id.name if line.product_uom_id else 'C62'}">{line.quantity:.4f}</ram:BilledQuantity>
       </ram:SpecifiedLineTradeDelivery>
       <ram:SpecifiedLineTradeSettlement>
+        <ram:ApplicableTradeTax>
+          <ram:TypeCode>VAT</ram:TypeCode>
+          <ram:CategoryCode>{self._line_tax_category(line)}</ram:CategoryCode>
+          <ram:RateApplicablePercent>{self._line_tax_rate(line):.2f}</ram:RateApplicablePercent>
+        </ram:ApplicableTradeTax>
         <ram:SpecifiedTradeSettlementLineMonetarySummation>
           <ram:LineTotalAmount>{line.price_subtotal:.2f}</ram:LineTotalAmount>
         </ram:SpecifiedTradeSettlementLineMonetarySummation>
       </ram:SpecifiedLineTradeSettlement>
     </ram:IncludedSupplyChainTradeLineItem>"""
+
+    def _line_tax_rate(self, line) -> float:
+        taxes = getattr(line, 'tax_ids', None)
+        if taxes:
+            for tax in taxes:
+                if getattr(tax, 'amount_type', None) == 'percent':
+                    return float(tax.amount)
+        return 0.0
+
+    def _line_tax_category(self, line) -> str:
+        taxes = getattr(line, 'tax_ids', None)
+        if taxes:
+            for tax in taxes:
+                # Map Odoo fiscal position / tax scope to EN16931 category codes
+                if getattr(tax, 'amount', 0) == 0:
+                    return 'Z'
+        return 'S'
 
