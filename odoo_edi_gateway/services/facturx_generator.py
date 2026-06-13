@@ -50,7 +50,7 @@ class FacturXGenerator:
         }
 
     def _get_invoice_pdf(self) -> bytes:
-        report_id = self.move._get_invoice_pdf_report_id()
+      report_id = self.move._get_name_invoice_report()
         pdf_content, _ = self.move.env['ir.actions.report']._render_qweb_pdf(
             report_id,
             res_ids=self.move.ids,
