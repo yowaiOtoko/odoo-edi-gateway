@@ -57,7 +57,10 @@ class TestFacturXGenerator(TransactionCase):
         generator = FacturXGenerator(self._make_move())
         root = ET.fromstring(generator._build_xml())
 
+        self.assertIsNotNone(root.find('.//ram:ApplicableHeaderTradeDelivery', NS))
+        self.assertIsNotNone(root.find('.//ram:SpecifiedTradeSettlementHeaderMonetarySummation/ram:TaxBasisTotalAmount', NS))
         items = root.findall('.//ram:IncludedSupplyChainTradeLineItem', NS)
         self.assertEqual(len(items), 2)
         for item in items:
             self.assertIsNotNone(item.find('ram:AssociatedDocumentLineDocument', NS))
+            self.assertIsNotNone(item.find('ram:SpecifiedLineTradeDelivery/ram:RequestedQuantity', NS))

@@ -1,6 +1,7 @@
 import hashlib
 import logging
 from datetime import date
+from types import SimpleNamespace
 from tempfile import NamedTemporaryFile
 
 _logger = logging.getLogger(__name__)
@@ -74,7 +75,18 @@ class FacturXGenerator:
 
     def _build_xml(self) -> bytes:
         move = self.move
-        lines_xml = ''.join(self._line_xml(line, i + 1) for i, line in enumerate(move.invoice_line_ids.filtered(lambda l: not l.display_type)))
+        invoice_lines = list(move.invoice_line_ids.filtered(lambda l: not l.display_type))
+        if not invoice_lines:
+            invoice_lines = [SimpleNamespace(
+                name=move.name or 'Invoice line',
+                price_unit=float(move.amount_untaxed),
+                quantity=1.0,
+                price_subtotal=float(move.amount_untaxed),
+                product_uom_id=SimpleNamespace(name='C62'),
+            )]
+        lines_xml = ''.join(self._line_xml(line, i + 1) for i, line in enumerate(invoice_lines))
+        total_quantity = sum(float(getattr(line, 'quantity', 0.0) or 0.0) for line in invoice_lines) or 1.0
+        quantity_uom = getattr(getattr(invoice_lines[0], 'product_uom_id', None), 'name', 'C62') or 'C62'
         xml = f"""<?xml version="1.0" encoding="UTF-8"?>
 <rsm:CrossIndustryInvoice
     xmlns:rsm="urn:un:unece:uncefact:data:standard:CrossIndustryInvoice:100"
@@ -108,10 +120,13 @@ class FacturXGenerator:
         </ram:SpecifiedLegalOrganization>
       </ram:BuyerTradeParty>
     </ram:ApplicableHeaderTradeAgreement>
+    <ram:ApplicableHeaderTradeDelivery>
+    </ram:ApplicableHeaderTradeDelivery>
     <ram:ApplicableHeaderTradeSettlement>
       <ram:InvoiceCurrencyCode>{move.currency_id.name}</ram:InvoiceCurrencyCode>
       <ram:SpecifiedTradeSettlementHeaderMonetarySummation>
         <ram:LineTotalAmount>{move.amount_untaxed:.2f}</ram:LineTotalAmount>
+        <ram:TaxBasisTotalAmount>{move.amount_untaxed:.2f}</ram:TaxBasisTotalAmount>
         <ram:TaxTotalAmount currencyID="{move.currency_id.name}">{move.amount_tax:.2f}</ram:TaxTotalAmount>
         <ram:GrandTotalAmount>{move.amount_total:.2f}</ram:GrandTotalAmount>
         <ram:DuePayableAmount>{move.amount_residual:.2f}</ram:DuePayableAmount>
@@ -135,7 +150,7 @@ class FacturXGenerator:
         </ram:NetPriceProductTradePrice>
       </ram:SpecifiedLineTradeAgreement>
       <ram:SpecifiedLineTradeDelivery>
-        <ram:BilledQuantity unitCode="{line.product_uom_id.name if line.product_uom_id else 'C62'}">{line.quantity:.4f}</ram:BilledQuantity>
+        <ram:RequestedQuantity unitCode="{line.product_uom_id.name if line.product_uom_id else 'C62'}">{line.quantity:.4f}</ram:RequestedQuantity>
       </ram:SpecifiedLineTradeDelivery>
       <ram:SpecifiedLineTradeSettlement>
         <ram:SpecifiedTradeSettlementLineMonetarySummation>
