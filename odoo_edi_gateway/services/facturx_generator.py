@@ -124,6 +124,13 @@ class FacturXGenerator:
     </ram:ApplicableHeaderTradeDelivery>
     <ram:ApplicableHeaderTradeSettlement>
       <ram:InvoiceCurrencyCode>{move.currency_id.name}</ram:InvoiceCurrencyCode>
+      <ram:ApplicableTradeTax>
+        <ram:CalculatedAmount currencyID="{move.currency_id.name}">{move.amount_tax:.2f}</ram:CalculatedAmount>
+        <ram:TypeCode>VAT</ram:TypeCode>
+        <ram:BasisAmount currencyID="{move.currency_id.name}">{move.amount_untaxed:.2f}</ram:BasisAmount>
+        <ram:CategoryCode>{self._header_tax_category(move)}</ram:CategoryCode>
+        <ram:RateApplicablePercent>{self._header_tax_rate(move):.2f}</ram:RateApplicablePercent>
+      </ram:ApplicableTradeTax>
       <ram:SpecifiedTradeSettlementHeaderMonetarySummation>
         <ram:LineTotalAmount>{move.amount_untaxed:.2f}</ram:LineTotalAmount>
         <ram:TaxBasisTotalAmount>{move.amount_untaxed:.2f}</ram:TaxBasisTotalAmount>
@@ -180,4 +187,12 @@ class FacturXGenerator:
                 if getattr(tax, 'amount', 0) == 0:
                     return 'Z'
         return 'S'
+
+    def _header_tax_rate(self, move) -> float:
+      if move.amount_untaxed:
+        return float(move.amount_tax) * 100.0 / float(move.amount_untaxed)
+      return 0.0
+
+    def _header_tax_category(self, move) -> str:
+      return 'Z' if float(getattr(move, 'amount_tax', 0.0) or 0.0) == 0.0 else 'S'
 

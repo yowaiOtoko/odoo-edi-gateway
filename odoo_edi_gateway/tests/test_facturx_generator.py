@@ -1,9 +1,17 @@
 from types import SimpleNamespace
 import xml.etree.ElementTree as ET
+import unittest
 
 from odoo.tests.common import TransactionCase
 
 from ..services.facturx_generator import FacturXGenerator
+
+try:
+    from facturx import xml_check_xsd
+    _FACTURX_VALIDATOR_AVAILABLE = True
+except ImportError:
+    xml_check_xsd = None
+    _FACTURX_VALIDATOR_AVAILABLE = False
 
 
 NS = {
@@ -29,6 +37,7 @@ class TestFacturXGenerator(TransactionCase):
             quantity=1.0,
             price_subtotal=1000.0,
             product_uom_id=SimpleNamespace(name='C62'),
+            tax_ids=[SimpleNamespace(amount_type='percent', amount=20.0)],
         )
         line2 = SimpleNamespace(
             display_type=False,
@@ -37,6 +46,7 @@ class TestFacturXGenerator(TransactionCase):
             quantity=2.0,
             price_subtotal=500.0,
             product_uom_id=SimpleNamespace(name='C62'),
+            tax_ids=[SimpleNamespace(amount_type='percent', amount=20.0)],
         )
         return SimpleNamespace(
             name='INV-2026-001',
@@ -58,9 +68,18 @@ class TestFacturXGenerator(TransactionCase):
         root = ET.fromstring(generator._build_xml())
 
         self.assertIsNotNone(root.find('.//ram:ApplicableHeaderTradeDelivery', NS))
+        self.assertIsNotNone(root.find('.//ram:ApplicableHeaderTradeSettlement/ram:ApplicableTradeTax', NS))
         self.assertIsNotNone(root.find('.//ram:SpecifiedTradeSettlementHeaderMonetarySummation/ram:TaxBasisTotalAmount', NS))
         items = root.findall('.//ram:IncludedSupplyChainTradeLineItem', NS)
         self.assertEqual(len(items), 2)
         for item in items:
             self.assertIsNotNone(item.find('ram:AssociatedDocumentLineDocument', NS))
-            self.assertIsNotNone(item.find('ram:SpecifiedLineTradeDelivery/ram:RequestedQuantity', NS))
+            self.assertIsNotNone(item.find('ram:SpecifiedLineTradeDelivery/ram:BilledQuantity', NS))
+            self.assertIsNotNone(item.find('ram:SpecifiedLineTradeSettlement/ram:ApplicableTradeTax', NS))
+
+    @unittest.skipUnless(_FACTURX_VALIDATOR_AVAILABLE, 'factur-x validator is not installed')
+    def test_build_xml_passes_facturx_schema_validation(self):
+        generator = FacturXGenerator(self._make_move())
+        xml_bytes = generator._build_xml()
+
+        self.assertTrue(xml_check_xsd(xml_bytes, flavor='factur-x', level='en16931'))
